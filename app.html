@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Är det grillväder?</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to right, #ff8c00, #ff4500);
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+        h1 {
+            font-size: 2em;
+        }
+        button {
+            background-color: white;
+            color: #ff4500;
+            font-size: 1.2em;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        button:hover {
+            background-color: #ff4500;
+            color: white;
+        }
+        #result {
+            font-size: 1.2em;
+            margin-top: 20px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            display: inline-block;
+            border-radius: 10px;
+        }
+        .fire-container {
+            position: relative;
+            width: 100px;
+            height: 120px;
+            margin: auto;
+            display: none; /* Dölj elden som standard */
+        }
+        .flame {
+            position: absolute;
+            width: 50px;
+            height: 80px;
+            background: orange;
+            border-radius: 50% 50% 20% 20%;
+            bottom: 0;
+            animation: flicker 0.5s infinite alternate ease-in-out;
+        }
+        .flame:nth-child(2) {
+            background: red;
+            width: 40px;
+            height: 60px;
+            left: 30px;
+            animation-duration: 0.6s;
+        }
+        .flame:nth-child(3) {
+            background: yellow;
+            width: 30px;
+            height: 50px;
+            left: 15px;
+            animation-duration: 0.7s;
+        }
+        @keyframes flicker {
+            0% { transform: scale(1) translateY(0); opacity: 1; }
+            100% { transform: scale(1.2) translateY(-10px); opacity: 0.8; }
+        }
+    </style>
+    <script>
+        async function getWeather() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(async position => {
+                    try {
+                        let lat = position.coords.latitude;
+                        let lon = position.coords.longitude;
+                        let apiKey = "4820788bc14d5cf2c87d226a0c80251e"; 
+                        let url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
+
+                        let response = await fetch(url);
+                        if (!response.ok) throw new Error("Misslyckades att hämta väderdata");
+                        
+                        let data = await response.json();
+                        let temp = data.main.temp;
+                        let windSpeed = data.wind.speed;
+                        let description = data.weather[0].description.toLowerCase();
+
+                        let grillväder;
+                        if (temp > 20 && windSpeed < 5 && !description.includes("rain")) {
+                            grillväder = "🔥 OPTIMALT! Nästan olagligt att INTE grilla!";
+                            document.getElementById("fire").style.display = "block"; // Visa eld
+                        } else if (temp >= 10 && temp <= 20 && windSpeed < 5 && description.includes("light rain")) {
+                            grillväder = "🤔 Kanske inte det bästa, men det går.";
+                            document.getElementById("fire").style.display = "none"; // Dölj eld
+                        } else {
+                            grillväder = "❌ Nej, vänta med grillningen.";
+                            document.getElementById("fire").style.display = "none"; // Dölj eld
+                        }
+
+                        document.getElementById("result").innerHTML = `
+                            <strong>Temperatur:</strong> ${temp}°C<br>
+                            <strong>Vindhastighet:</strong> ${windSpeed} m/s<br>
+                            <strong>Väder:</strong> ${description}<br>
+                            <strong>Grillväder?</strong> ${grillväder}
+                        `;
+                    } catch (error) {
+                        document.getElementById("result").innerText = "Något gick fel: " + error.message;
+                    }
+                }, error => {
+                    document.getElementById("result").innerText = "Geolokalisering misslyckades.";
+                });
+            } else {
+                document.getElementById("result").innerText = "Geolokalisering stöds inte av din webbläsare.";
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>Är det grillväder?</h1>
+    <button onclick="getWeather()">Kolla vädret</button>
+    <p id="result"></p>
+
+    <!-- Eldcontainer -->
+    <div id="fire" class="fire-container">
+        <div class="flame"></div>
+        <div class="flame"></div>
+        <div class="flame"></div>
+    </div>
+</body>
+</html>
