@@ -104,26 +104,23 @@
                     let windSpeed = currentData.wind.speed;
                     let description = currentData.weather[0].description.toLowerCase();
 
-                    // 🎨 Lägg till väderikoner baserat på beskrivning
                     let weatherIcon = description.includes("rain") ? "🌧️" :
                                       description.includes("cloud") ? "☁️" :
                                       description.includes("clear") ? "☀️" : "❓";
                     let windIcon = windSpeed > 5 ? "💨" : "";
                     let tempIcon = temp > 20 ? "🔥" : temp > 10 ? "🌤️" : "❄️";
 
-                    let grillväderNu;
+                    let grillväderNu = "❌ Ingen grillning just nu.";
+                    document.getElementById("fire").style.display = "none";
+
                     if (temp > 20 && windSpeed < 5 && !description.includes("rain")) {
                         grillväderNu = "🔥 OPTIMALT! Nästan olagligt att INTE grilla!";
                         document.getElementById("fire").style.display = "block";
                     } else if (temp > 7 && windSpeed < 8 && !description.includes("rain")) {
                         grillväderNu = "🤷‍♂️ Det går. Men det är kanske inte det bästa grillvädret.";
-                        document.getElementById("fire").style.display = "none";
-                    } else {
-                        grillväderNu = "❌ Ingen grillning just nu.";
-                        document.getElementById("fire").style.display = "none";
                     }
 
-                    // Om det inte är grillväder just nu, hämta prognosdata
+                    // Hämta prognosdata
                     let forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
                     let forecastResponse = await fetch(forecastUrl);
                     if (!forecastResponse.ok) throw new Error("Misslyckades att hämta prognosdata");
@@ -132,7 +129,14 @@
                     console.log("📅 Prognosdata:", forecastData);
 
                     let forecast = forecastData.list.slice(0, 8); // Kollar de kommande 24 timmarna
-                    let grillväderSenare = null;
+                    let forecastHTML = `
+                        <table border="1" style="margin-top:10px; width:100%; text-align:center; background:rgba(255,255,255,0.2); border-radius:10px;">
+                            <tr>
+                                <th>Tid</th>
+                                <th>Temp 🌡️</th>
+                                <th>Vind 💨</th>
+                                <th>Väder 🌦️</th>
+                            </tr>`;
 
                     forecast.forEach(f => {
                         let fTemp = f.main.temp;
@@ -140,24 +144,30 @@
                         let fDescription = f.weather[0].description.toLowerCase();
                         let time = new Date(f.dt * 1000).toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" });
 
-                        console.log(`🔍 Prognos för kl. ${time}: Temp=${fTemp}°C, Vind=${fWindSpeed} m/s, Väder=${fDescription}`);
+                        let fWeatherIcon = fDescription.includes("rain") ? "🌧️" :
+                                           fDescription.includes("cloud") ? "☁️" :
+                                           fDescription.includes("clear") ? "☀️" : "❓";
+                        let fWindIcon = fWindSpeed > 5 ? "💨" : "";
 
-                        if (fTemp > 20 && fWindSpeed < 5 && !fDescription.includes("rain")) {
-                            grillväderSenare = `🔥 OPTIMALT grillväder kl. ${time}! Nästan olagligt att INTE grilla!`;
-                        } else if (fTemp > 10 && fWindSpeed < 8 && fDescription.includes("light rain")) {
-                            grillväderSenare = `🤔 Kanske inte det bästa, men det går kl. ${time}.`;
-                        } else if (fTemp > 7 && fWindSpeed < 8 && !fDescription.includes("rain")) {
-                            grillväderSenare = `🤷‍♂️ Det går kl. ${time}. Men det är kanske inte det bästa grillvädret.`;
-                        }
+                        forecastHTML += `
+                            <tr>
+                                <td>${time}</td>
+                                <td>${fTemp}°C</td>
+                                <td>${fWindSpeed} m/s ${fWindIcon}</td>
+                                <td>${fDescription} ${fWeatherIcon}</td>
+                            </tr>`;
                     });
 
-                    // Visa resultat + väderdata + ikoner
+                    forecastHTML += `</table>`;
+
+                    // Visa resultat + väderdata + prognostabell
                     document.getElementById("result").innerHTML = `
                         <strong>Temperatur:</strong> ${temp}°C ${tempIcon}<br>
                         <strong>Vindhastighet:</strong> ${windSpeed} m/s ${windIcon}<br>
                         <strong>Väder:</strong> ${description} ${weatherIcon}<br><br>
-                        <strong>${grillväderNu}</strong><br>
-                        ${grillväderSenare ? `<br><strong>${grillväderSenare}</strong>` : ""}
+                        <strong>${grillväderNu}</strong><br><br>
+                        <strong>🔮 Prognos för senare:</strong>
+                        ${forecastHTML}
                     `;
 
                 } catch (error) {
@@ -172,6 +182,5 @@
             document.getElementById("result").innerText = "Geolokalisering stöds inte av din webbläsare.";
         }
     }
-</script>
-</body>
+</script></body>
 </html>
