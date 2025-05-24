@@ -104,6 +104,13 @@
                     let windSpeed = currentData.wind.speed;
                     let description = currentData.weather[0].description.toLowerCase();
 
+                    // 🎨 Lägg till väderikoner baserat på beskrivning
+                    let weatherIcon = description.includes("rain") ? "🌧️" :
+                                      description.includes("cloud") ? "☁️" :
+                                      description.includes("clear") ? "☀️" : "❓";
+                    let windIcon = windSpeed > 5 ? "💨" : "";
+                    let tempIcon = temp > 20 ? "🔥" : temp > 10 ? "🌤️" : "❄️";
+
                     let grillväderNu;
                     if (temp > 20 && windSpeed < 5 && !description.includes("rain")) {
                         grillväderNu = "🔥 OPTIMALT! Nästan olagligt att INTE grilla!";
@@ -144,11 +151,11 @@
                         }
                     });
 
-                    // Visa resultat + väderdata
+                    // Visa resultat + väderdata + ikoner
                     document.getElementById("result").innerHTML = `
-                        <strong>Temperatur:</strong> ${temp}°C<br>
-                        <strong>Vindhastighet:</strong> ${windSpeed} m/s<br>
-                        <strong>Väder:</strong> ${description}<br><br>
+                        <strong>Temperatur:</strong> ${temp}°C ${tempIcon}<br>
+                        <strong>Vindhastighet:</strong> ${windSpeed} m/s ${windIcon}<br>
+                        <strong>Väder:</strong> ${description} ${weatherIcon}<br><br>
                         <strong>${grillväderNu}</strong><br>
                         ${grillväderSenare ? `<br><strong>${grillväderSenare}</strong>` : ""}
                     `;
