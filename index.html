@@ -81,7 +81,7 @@
         <div class="flame"></div>
     </div>
 
-    <script>
+<script>
     async function getWeather() {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(async position => {
@@ -112,7 +112,7 @@
                         grillväderNu = "🤷‍♂️ Det går. Men det är kanske inte det bästa grillvädret.";
                         document.getElementById("fire").style.display = "none";
                     } else {
-                        grillväderNu = null;
+                        grillväderNu = "❌ Ingen grillning just nu.";
                         document.getElementById("fire").style.display = "none";
                     }
 
@@ -144,12 +144,14 @@
                         }
                     });
 
-                    // Visa resultat
-                    document.getElementById("result").innerHTML = grillväderNu
-                        ? `<strong>${grillväderNu}</strong>`
-                        : grillväderSenare
-                        ? `<strong>${grillväderSenare}</strong>`
-                        : "❌ Ser inte ut att bli något bra grillväder alls idag.";
+                    // Visa resultat + väderdata
+                    document.getElementById("result").innerHTML = `
+                        <strong>Temperatur:</strong> ${temp}°C<br>
+                        <strong>Vindhastighet:</strong> ${windSpeed} m/s<br>
+                        <strong>Väder:</strong> ${description}<br><br>
+                        <strong>${grillväderNu}</strong><br>
+                        ${grillväderSenare ? `<br><strong>${grillväderSenare}</strong>` : ""}
+                    `;
 
                 } catch (error) {
                     console.error("❌ Fel uppstod:", error);
@@ -163,6 +165,6 @@
             document.getElementById("result").innerText = "Geolokalisering stöds inte av din webbläsare.";
         }
     }
-	</script>
+</script>
 </body>
 </html>
