@@ -94,16 +94,8 @@
                         if (temp > 20 && windSpeed < 5 && !description.includes("rain")) {
                             grillväder = "🔥 OPTIMALT! Nästan olagligt att INTE grilla!";
                             document.getElementById("fire").style.display = "block"; // Visa eld
-                        } else if (temp >= 15 && temp <= 20 && windSpeed < 10 && description.includes("light rain")) {
-                            grillväder = "🤔 Kanske inte det bästa, men det går. Tänk på att det blåser!";
-                            document.getElementById("fire").style.display = "none"; // Dölj eld
-                        } else {
-                        } else if (temp >= 10 && temp <= 20 && windSpeed < 5 && description.includes("light rain")) {
+                        } else if (temp >= 10 && temp <= 20 && windSpeed < 8 && description.includes("light rain")) {
                             grillväder = "🤔 Kanske inte det bästa, men det går.";
-                            document.getElementById("fire").style.display = "none"; // Dölj eld
-                        } else {
-                        } else if (temp >= 5 && temp <= 20 && windSpeed < 5 && description.includes("light rain")) {
-                            grillväder = "🤔 Det går. Men det blir nog inte så roligt.";
                             document.getElementById("fire").style.display = "none"; // Dölj eld
                         } else {
                             grillväder = "❌ Nej, vänta med grillningen.";
