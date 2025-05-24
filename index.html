@@ -12,9 +12,6 @@
             text-align: center;
             padding: 20px;
         }
-        h1 {
-            font-size: 2em;
-        }
         button {
             background-color: white;
             color: #ff4500;
@@ -42,7 +39,7 @@
             width: 100px;
             height: 120px;
             margin: auto;
-            display: none; /* Dölj elden som standard */
+            display: none;
         }
         .flame {
             position: absolute;
@@ -72,64 +69,100 @@
             100% { transform: scale(1.2) translateY(-10px); opacity: 0.8; }
         }
     </style>
-    <script>
-        async function getWeather() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(async position => {
-                    try {
-                        let lat = position.coords.latitude;
-                        let lon = position.coords.longitude;
-                        let apiKey = "4820788bc14d5cf2c87d226a0c80251e"; 
-                        let url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
-
-                        let response = await fetch(url);
-                        if (!response.ok) throw new Error("Misslyckades att hämta väderdata");
-                        
-                        let data = await response.json();
-                        let temp = data.main.temp;
-                        let windSpeed = data.wind.speed;
-                        let description = data.weather[0].description.toLowerCase();
-
-                        let grillväder;
-                        if (temp > 20 && windSpeed < 5 && !description.includes("rain")) {
-                            grillväder = "🔥 OPTIMALT! Nästan olagligt att INTE grilla!";
-                            document.getElementById("fire").style.display = "block"; // Visa eld
-                        } else if (temp >= 10 && temp <= 20 && windSpeed < 8 && description.includes("light rain")) {
-                            grillväder = "🤔 Kanske inte det bästa, men det går.";
-                            document.getElementById("fire").style.display = "none"; // Dölj eld
-                        } else {
-                            grillväder = "❌ Nej, vänta med grillningen.";
-                            document.getElementById("fire").style.display = "none"; // Dölj eld
-                        }
-
-                        document.getElementById("result").innerHTML = `
-                            <strong>Temperatur:</strong> ${temp}°C<br>
-                            <strong>Vindhastighet:</strong> ${windSpeed} m/s<br>
-                            <strong>Väder:</strong> ${description}<br>
-                            <strong>Grillväder?</strong> ${grillväder}
-                        `;
-                    } catch (error) {
-                        document.getElementById("result").innerText = "Något gick fel: " + error.message;
-                    }
-                }, error => {
-                    document.getElementById("result").innerText = "Geolokalisering misslyckades.";
-                });
-            } else {
-                document.getElementById("result").innerText = "Geolokalisering stöds inte av din webbläsare.";
-            }
-        }
-    </script>
 </head>
 <body>
     <h1>Är det grillväder?</h1>
     <button onclick="getWeather()">Kolla vädret</button>
     <p id="result"></p>
 
-    <!-- Eldcontainer -->
     <div id="fire" class="fire-container">
         <div class="flame"></div>
         <div class="flame"></div>
         <div class="flame"></div>
     </div>
+
+    <script>
+    async function getWeather() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(async position => {
+                try {
+                    let lat = position.coords.latitude;
+                    let lon = position.coords.longitude;
+                    let apiKey = "4820788bc14d5cf2c87d226a0c80251e"; 
+
+                    console.log("📍 Platsdetaljer:", { lat, lon });
+
+                    // Hämta nuvarande väder
+                    let currentUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
+                    let currentResponse = await fetch(currentUrl);
+                    if (!currentResponse.ok) throw new Error("Misslyckades att hämta väderdata");
+
+                    let currentData = await currentResponse.json();
+                    console.log("🌦️ Aktuellt väderdata:", currentData);
+
+                    let temp = currentData.main.temp;
+                    let windSpeed = currentData.wind.speed;
+                    let description = currentData.weather[0].description.toLowerCase();
+
+                    let grillväderNu;
+                    if (temp > 20 && windSpeed < 5 && !description.includes("rain")) {
+                        grillväderNu = "🔥 OPTIMALT! Nästan olagligt att INTE grilla!";
+                        document.getElementById("fire").style.display = "block";
+                    } else if (temp > 7 && windSpeed < 8 && !description.includes("rain")) {
+                        grillväderNu = "🤷‍♂️ Det går. Men det är kanske inte det bästa grillvädret.";
+                        document.getElementById("fire").style.display = "none";
+                    } else {
+                        grillväderNu = null;
+                        document.getElementById("fire").style.display = "none";
+                    }
+
+                    // Om det inte är grillväder just nu, hämta prognosdata
+                    let forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
+                    let forecastResponse = await fetch(forecastUrl);
+                    if (!forecastResponse.ok) throw new Error("Misslyckades att hämta prognosdata");
+
+                    let forecastData = await forecastResponse.json();
+                    console.log("📅 Prognosdata:", forecastData);
+
+                    let forecast = forecastData.list.slice(0, 8); // Kollar de kommande 24 timmarna
+                    let grillväderSenare = null;
+
+                    forecast.forEach(f => {
+                        let fTemp = f.main.temp;
+                        let fWindSpeed = f.wind.speed;
+                        let fDescription = f.weather[0].description.toLowerCase();
+                        let time = new Date(f.dt * 1000).toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" });
+
+                        console.log(`🔍 Prognos för kl. ${time}: Temp=${fTemp}°C, Vind=${fWindSpeed} m/s, Väder=${fDescription}`);
+
+                        if (fTemp > 20 && fWindSpeed < 5 && !fDescription.includes("rain")) {
+                            grillväderSenare = `🔥 OPTIMALT grillväder kl. ${time}! Nästan olagligt att INTE grilla!`;
+                        } else if (fTemp > 10 && fWindSpeed < 8 && fDescription.includes("light rain")) {
+                            grillväderSenare = `🤔 Kanske inte det bästa, men det går kl. ${time}.`;
+                        } else if (fTemp > 7 && fWindSpeed < 8 && !fDescription.includes("rain")) {
+                            grillväderSenare = `🤷‍♂️ Det går kl. ${time}. Men det är kanske inte det bästa grillvädret.`;
+                        }
+                    });
+
+                    // Visa resultat
+                    document.getElementById("result").innerHTML = grillväderNu
+                        ? `<strong>${grillväderNu}</strong>`
+                        : grillväderSenare
+                        ? `<strong>${grillväderSenare}</strong>`
+                        : "❌ Ser inte ut att bli något bra grillväder alls idag.";
+
+                } catch (error) {
+                    console.error("❌ Fel uppstod:", error);
+                    document.getElementById("result").innerText = "Något gick fel: " + error.message;
+                }
+            }, error => {
+                console.error("❌ Geolokalisering misslyckades:", error);
+                document.getElementById("result").innerText = "Geolokalisering misslyckades.";
+            });
+        } else {
+            document.getElementById("result").innerText = "Geolokalisering stöds inte av din webbläsare.";
+        }
+    }
+	</script>
 </body>
 </html>
