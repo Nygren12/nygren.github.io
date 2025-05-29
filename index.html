@@ -88,21 +88,17 @@
                 try {
                     let lat = position.coords.latitude;
                     let lon = position.coords.longitude;
-                    let apiKey = "4820788bc14d5cf2c87d226a0c80251e"; 
+                    
+                    // 🔐 Anropar Cloudflare Workers istället för direkt API-anrop!
+                    let url = `https://grill-vader.simonnygren46.workers.dev/?lat=${lat}&lon=${lon}`; 
+                    let response = await fetch(url);
+                    let data = await response.json();
+                    
+                    console.log("🌦️ Data från Cloudflare Proxy:", data);
 
-                    console.log("📍 Platsdetaljer:", { lat, lon });
-
-                    // Hämta nuvarande väder
-                    let currentUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
-                    let currentResponse = await fetch(currentUrl);
-                    if (!currentResponse.ok) throw new Error("Misslyckades att hämta väderdata");
-
-                    let currentData = await currentResponse.json();
-                    console.log("🌦️ Aktuellt väderdata:", currentData);
-
-                    let temp = currentData.main.temp;
-                    let windSpeed = currentData.wind.speed;
-                    let description = currentData.weather[0].description.toLowerCase();
+                    let temp = data.main.temp;
+                    let windSpeed = data.wind.speed;
+                    let description = data.weather[0].description.toLowerCase();
 
                     let weatherIcon = description.includes("rain") ? "🌧️" :
                                       description.includes("cloud") ? "☁️" :
@@ -120,54 +116,12 @@
                         grillväderNu = "🤷‍♂️ Det går. Men det är kanske inte det bästa grillvädret.";
                     }
 
-                    // Hämta prognosdata
-                    let forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
-                    let forecastResponse = await fetch(forecastUrl);
-                    if (!forecastResponse.ok) throw new Error("Misslyckades att hämta prognosdata");
-
-                    let forecastData = await forecastResponse.json();
-                    console.log("📅 Prognosdata:", forecastData);
-
-                    let forecast = forecastData.list.slice(0, 8); // Kollar de kommande 24 timmarna
-                    let forecastHTML = `
-                        <table border="1" style="margin-top:10px; width:100%; text-align:center; background:rgba(255,255,255,0.2); border-radius:10px;">
-                            <tr>
-                                <th>Tid</th>
-                                <th>Temp 🌡️</th>
-                                <th>Vind 💨</th>
-                                <th>Väder 🌦️</th>
-                            </tr>`;
-
-                    forecast.forEach(f => {
-                        let fTemp = f.main.temp;
-                        let fWindSpeed = f.wind.speed;
-                        let fDescription = f.weather[0].description.toLowerCase();
-                        let time = new Date(f.dt * 1000).toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" });
-
-                        let fWeatherIcon = fDescription.includes("rain") ? "🌧️" :
-                                           fDescription.includes("cloud") ? "☁️" :
-                                           fDescription.includes("clear") ? "☀️" : "❓";
-                        let fWindIcon = fWindSpeed > 5 ? "💨" : "";
-
-                        forecastHTML += `
-                            <tr>
-                                <td>${time}</td>
-                                <td>${fTemp}°C</td>
-                                <td>${fWindSpeed} m/s ${fWindIcon}</td>
-                                <td>${fDescription} ${fWeatherIcon}</td>
-                            </tr>`;
-                    });
-
-                    forecastHTML += `</table>`;
-
-                    // Visa resultat + väderdata + prognostabell
+                    // Visa resultat + väderdata
                     document.getElementById("result").innerHTML = `
                         <strong>Temperatur:</strong> ${temp}°C ${tempIcon}<br>
                         <strong>Vindhastighet:</strong> ${windSpeed} m/s ${windIcon}<br>
                         <strong>Väder:</strong> ${description} ${weatherIcon}<br><br>
-                        <strong>${grillväderNu}</strong><br><br>
-                        <strong>🔮 Prognos för senare:</strong>
-                        ${forecastHTML}
+                        <strong>${grillväderNu}</strong>
                     `;
 
                 } catch (error) {
