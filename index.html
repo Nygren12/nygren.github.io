@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Simon Nygren">
     <title>Är det grillväder?</title>
     <style>
         body {
@@ -89,7 +90,7 @@
                     let lat = position.coords.latitude;
                     let lon = position.coords.longitude;
                     
-                    // 🔐 Anropar Cloudflare Workers istället för direkt API-anrop!
+                    //Anropar Cloudflare Workers.
                     let url = `https://grill-vader.simonnygren46.workers.dev/?lat=${lat}&lon=${lon}`; 
                     let response = await fetch(url);
                     let data = await response.json();
