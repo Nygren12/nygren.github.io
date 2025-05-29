@@ -35,6 +35,18 @@
             display: inline-block;
             border-radius: 10px;
         }
+        table {
+            width: 100%;
+            text-align: center;
+            border-collapse: collapse;
+            margin-top: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid white;
+        }
         .fire-container {
             position: relative;
             width: 100px;
@@ -42,38 +54,12 @@
             margin: auto;
             display: none;
         }
-        .flame {
-            position: absolute;
-            width: 50px;
-            height: 80px;
-            background: orange;
-            border-radius: 50% 50% 20% 20%;
-            bottom: 0;
-            animation: flicker 0.5s infinite alternate ease-in-out;
-        }
-        .flame:nth-child(2) {
-            background: red;
-            width: 40px;
-            height: 60px;
-            left: 30px;
-            animation-duration: 0.6s;
-        }
-        .flame:nth-child(3) {
-            background: yellow;
-            width: 30px;
-            height: 50px;
-            left: 15px;
-            animation-duration: 0.7s;
-        }
-        @keyframes flicker {
-            0% { transform: scale(1) translateY(0); opacity: 1; }
-            100% { transform: scale(1.2) translateY(-10px); opacity: 0.8; }
-        }
     </style>
 </head>
 <body>
     <h1>Är det grillväder?</h1>
-    <button onclick="getWeather()">Kolla vädret</button>
+    <button onclick="getWeather('weather')">Kolla nuvarande väder</button>
+    <button onclick="getWeather('forecast')">Kolla prognos</button>
     <p id="result"></p>
 
     <div id="fire" class="fire-container">
@@ -82,60 +68,106 @@
         <div class="flame"></div>
     </div>
 
-<script>
-    async function getWeather() {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(async position => {
-                try {
-                    let lat = position.coords.latitude;
-                    let lon = position.coords.longitude;
-                    
-                    //Anropar Cloudflare Workers.
-                    let url = `https://grill-vader.simonnygren46.workers.dev/?lat=${lat}&lon=${lon}`; 
-                    let response = await fetch(url);
-                    let data = await response.json();
-                    
-                    console.log("🌦️ Data från Cloudflare Proxy:", data);
+    <script>
+        async function getWeather(type) {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(async position => {
+                    try {
+                        let lat = position.coords.latitude;
+                        let lon = position.coords.longitude;
+                        let url = `https://grill-vader.simonnygren46.workers.dev/?lat=${lat}&lon=${lon}&type=${type}`;
+                        
+                        let response = await fetch(url);
+                        let data = await response.json();
 
-                    let temp = data.main.temp;
-                    let windSpeed = data.wind.speed;
-                    let description = data.weather[0].description.toLowerCase();
+                        console.log(`🔍 Data från Cloudflare (${type}):`, data);
 
-                    let weatherIcon = description.includes("rain") ? "🌧️" :
-                                      description.includes("cloud") ? "☁️" :
-                                      description.includes("clear") ? "☀️" : "❓";
-                    let windIcon = windSpeed > 5 ? "💨" : "";
-                    let tempIcon = temp > 20 ? "🔥" : temp > 10 ? "🌤️" : "❄️";
+                        if (type === "weather") {
+                            if (!data.main) {
+                                document.getElementById("result").innerHTML = "❌ Kunde inte hämta nuvarande väder.";
+                                return;
+                            }
 
-                    let grillväderNu = "❌ Ingen grillning just nu.";
-                    document.getElementById("fire").style.display = "none";
+                            let temp = data.main.temp;
+                            let windSpeed = data.wind.speed;
+                            let description = data.weather[0].description.toLowerCase();
 
-                    if (temp > 20 && windSpeed < 5 && !description.includes("rain")) {
-                        grillväderNu = "🔥 OPTIMALT! Nästan olagligt att INTE grilla!";
-                        document.getElementById("fire").style.display = "block";
-                    } else if (temp > 7 && windSpeed < 8 && !description.includes("rain")) {
-                        grillväderNu = "🤷‍♂️ Det går. Men det är kanske inte det bästa grillvädret.";
+                            let weatherIcon = description.includes("rain") ? "🌧️" :
+                                              description.includes("cloud") ? "☁️" :
+                                              description.includes("clear") ? "☀️" : "❓";
+                            let windIcon = windSpeed > 5 ? "💨" : "";
+                            let tempIcon = temp > 20 ? "🔥" : temp > 10 ? "🌤️" : "❄️";
+
+                            let grillväderNu = "❌ Ingen grillning just nu.";
+                            document.getElementById("fire").style.display = "none";
+
+                            if (temp > 20 && windSpeed < 5 && !description.includes("rain")) {
+                                grillväderNu = "🔥 OPTIMALT! Nästan olagligt att INTE grilla!";
+                                document.getElementById("fire").style.display = "block";
+                            } else if (temp > 7 && windSpeed < 8 && !description.includes("rain")) {
+                                grillväderNu = "🤷‍♂️ Det går. Men det är kanske inte det bästa grillvädret.";
+                            }
+
+                            document.getElementById("result").innerHTML = `
+                                <strong>Temperatur:</strong> ${temp}°C ${tempIcon}<br>
+                                <strong>Vindhastighet:</strong> ${windSpeed} m/s ${windIcon}<br>
+                                <strong>Väder:</strong> ${description} ${weatherIcon}<br><br>
+                                <strong>${grillväderNu}</strong>
+                            `;
+                        } else {
+                            if (!data.list) {
+                                document.getElementById("result").innerHTML = "❌ Kunde inte hämta prognosdata.";
+                                return;
+                            }
+
+                            let forecastHTML = `
+                                <table>
+                                    <tr>
+                                        <th>Tid</th>
+                                        <th>Temp 🌡️</th>
+                                        <th>Vind 💨</th>
+                                        <th>Väder 🌦️</th>
+                                    </tr>`;
+
+                            let forecast = data.list.slice(0, 8); // Kollar de kommande 24 timmarna
+                            forecast.forEach(f => {
+                                let fTemp = f.main.temp;
+                                let fWindSpeed = f.wind.speed;
+                                let fDescription = f.weather[0].description.toLowerCase();
+                                let time = new Date(f.dt * 1000).toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" });
+
+                                let fWeatherIcon = fDescription.includes("rain") ? "🌧️" :
+                                                   fDescription.includes("cloud") ? "☁️" :
+                                                   fDescription.includes("clear") ? "☀️" : "❓";
+                                let fWindIcon = fWindSpeed > 5 ? "💨" : "";
+
+                                forecastHTML += `
+                                    <tr>
+                                        <td>${time}</td>
+                                        <td>${fTemp}°C</td>
+                                        <td>${fWindSpeed} m/s ${fWindIcon}</td>
+                                        <td>${fDescription} ${fWeatherIcon}</td>
+                                    </tr>`;
+                            });
+
+                            forecastHTML += `</table>`;
+                            document.getElementById("result").innerHTML = `
+                                <strong>🔮 Prognos för senare idag:</strong><br>
+                                ${forecastHTML}
+                            `;
+                        }
+                    } catch (error) {
+                        console.error("❌ Fetch-fel:", error);
+                        document.getElementById("result").innerText = "Något gick fel: " + error.message;
                     }
-
-                    // Visa resultat + väderdata
-                    document.getElementById("result").innerHTML = `
-                        <strong>Temperatur:</strong> ${temp}°C ${tempIcon}<br>
-                        <strong>Vindhastighet:</strong> ${windSpeed} m/s ${windIcon}<br>
-                        <strong>Väder:</strong> ${description} ${weatherIcon}<br><br>
-                        <strong>${grillväderNu}</strong>
-                    `;
-
-                } catch (error) {
-                    console.error("❌ Fel uppstod:", error);
-                    document.getElementById("result").innerText = "Något gick fel: " + error.message;
-                }
-            }, error => {
-                console.error("❌ Geolokalisering misslyckades:", error);
-                document.getElementById("result").innerText = "Geolokalisering misslyckades.";
-            });
-        } else {
-            document.getElementById("result").innerText = "Geolokalisering stöds inte av din webbläsare.";
+                }, error => {
+                    console.error("❌ Geolokalisering misslyckades:", error);
+                    document.getElementById("result").innerText = "Geolokalisering misslyckades.";
+                });
+            } else {
+                document.getElementById("result").innerText = "Geolokalisering stöds inte av din webbläsare.";
+            }
         }
-    }
-</script></body>
+    </script>
+</body>
 </html>
