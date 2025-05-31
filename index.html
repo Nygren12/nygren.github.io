@@ -104,8 +104,12 @@
                             if (temp > 20 && windSpeed < 5 && !description.includes("rain")) {
                                 grillväderNu = "🔥 OPTIMALT! Nästan olagligt att INTE grilla!";
                                 document.getElementById("fire").style.display = "block";
+                            } else if (temp > 15 && windSpeed < 5 && !description.includes("rain")) {
+                                grillväderNu = "🔥 Nu är det ganska bra grillväder.";
                             } else if (temp > 7 && windSpeed < 8 && !description.includes("rain")) {
                                 grillväderNu = "🤷‍♂️ Det går. Men det är kanske inte det bästa grillvädret.";
+                            } else if (temp > 0 && windSpeed < 20 && !description.includes("rain")) {
+                                grillväderNu = "🤷‍♂️ Nja.";
                             }
 
                             document.getElementById("result").innerHTML = `
